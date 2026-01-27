@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade & Breakeven Calculator</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 { text-align: center; color: var(--accent-color); margin-bottom: 30px; }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .calculator-card {
+            background-color: var(--card-card-bg);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            flex: 1;
+            min-width: 320px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group { margin-bottom: 15px; }
+
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #94a3b8; }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .value { font-weight: bold; color: var(--accent-color); }
+        
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Trading Fees & Breakeven Calculator</h2>
+
+    <div class="container">
+        <div class="calculator-card">
+            <h3>Crypto Calculator</h3>
+            <div class="input-group">
+                <label>Side</label>
+                <select id="cry-side">
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Entry Price</label>
+                <input type="number" id="cry-price" placeholder="0.00" oninput="calcCrypto()">
+            </div>
+            <div class="input-group">
+                <label>Quantity</label>
+                <input type="number" id="cry-qty" placeholder="0" oninput="calcCrypto()">
+            </div>
+            <div class="input-group">
+                <label>Entry Order Type</label>
+                <select id="cry-entry-type" onchange="calcCrypto()">
+                    <option value="0.0352">Taker (0.0352%)</option>
+                    <option value="0.0088">Maker (0.0088%)</option>
+                    <option value="0.022">50/50 Split</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Exit Order Type</label>
+                <select id="cry-exit-type" onchange="calcCrypto()">
+                    <option value="0.0044">Half Maker (0.0044%)</option>
+                    <option value="0.0088">Maker (0.0088%)</option>
+                    <option value="0.022">50/50 Split</option>
+                    <option value="0.0352">Taker (0.0352%)</option>
+                    <option value="0">Zero (0%)</option>
+                    <option value="0.0176">Half Taker (0.0176%)</option>
+                    
+                </select>
+            </div>
+
+            <div class="results">
+                <div class="result-item">
+                    <span>Total Charges:</span>
+                    <span class="value" id="cry-res-charges">0.00</span>
+                </div>
+                <div class="result-item">
+                    <span>Breakeven Price:</span>
+                    <span class="value" id="cry-res-be">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="calculator-card">
+            <h3>Nifty Options</h3>
+            <div class="input-group">
+                <label>Side</label>
+                <select id="opt-side" onchange="calcOptions()">
+                    <option value="sell">Sell</option>
+                    <option value="buy">Buy</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Entry Price</label>
+                <input type="number" id="opt-price" placeholder="0.00" oninput="calcOptions()">
+            </div>
+            <div class="input-group">
+                <label>Quantity </label>
+                <input type="number" id="opt-qty" placeholder="0" value="130" oninput="calcOptions()">
+            </div>
+
+            <div class="results">
+                <div class="result-item">
+                    <span>Total Charges:</span>
+                    <span class="value" id="opt-res-charges">₹ 0.00</span>
+                </div>
+                <div class="result-item">
+                    <span>Breakeven Price:</span>
+                    <span class="value" id="opt-res-be">₹ 0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calcCrypto() {
+            const side = document.getElementById('cry-side').value;
+            const price = parseFloat(document.getElementById('cry-price').value) || 0;
+            const qty = parseFloat(document.getElementById('cry-qty').value) || 0;
+            const entryFeePercent = parseFloat(document.getElementById('cry-entry-type').value) / 100;
+            const exitFeePercent = parseFloat(document.getElementById('cry-exit-type').value) / 100;
+
+            const entryCharges = qty * price * entryFeePercent;
+            const exitCharges = qty * price * exitFeePercent; // Simplified as exit price is unknown, using entry for BE
+            const totalCharges = entryCharges + exitCharges;
+
+            let be = side === 'buy' ? price + (totalCharges / qty) : price - (totalCharges / qty);
+
+            document.getElementById('cry-res-charges').innerText = totalCharges.toFixed(4);
+            document.getElementById('cry-res-be').innerText = be.toFixed(4);
+        }
+
+        function calcOptions() {
+            const side = document.getElementById('opt-side').value;
+            const price = parseFloat(document.getElementById('opt-price').value) || 0;
+            const qty = parseFloat(document.getElementById('opt-qty').value) || 0;
+
+            if (price === 0 || qty === 0) return;
+
+            const turnover = price * qty;
+            
+            const brokerage = 60; // Flat as per your request
+            const stt = 0.001 * turnover;
+            const txnCharges = 0.0003503 * 2 * turnover;
+            const sebi = 0.000001 * 2 * turnover;
+            const stamp = 0.00003 * turnover;
+            const ipft = 0.0000059 * 2 * turnover;
+            
+            const gst = 0.18 * (brokerage + sebi + txnCharges);
+            
+            const totalCharges = brokerage + stt + txnCharges + sebi + gst + stamp + ipft;
+            
+            let be = side === 'buy' ? price + (totalCharges / qty) : price - (totalCharges / qty);
+
+            document.getElementById('opt-res-charges').innerText = "₹ " + totalCharges.toFixed(2);
+            document.getElementById('opt-res-be').innerText = "₹ " + be.toFixed(2);
+        }
+    </script>
+</body>
+</html>
