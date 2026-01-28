@@ -12,6 +12,8 @@
             --accent-color: #38bdf8;
             --border-color: #334155;
             --input-bg: #0f172a;
+            --buy-green: #166534;
+            --sell-red: #991b1b;
         }
 
         body {
@@ -59,6 +61,10 @@
             font-size: 1rem;
         }
 
+        /* Color classes for dropdowns */
+        .bg-buy { background-color: var(--buy-green) !important; }
+        .bg-sell { background-color: var(--sell-red) !important; }
+
         .results {
             margin-top: 20px;
             padding-top: 20px;
@@ -78,7 +84,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="updateColors()">
 
     <h2>Trading Fees & Breakeven Calculator</h2>
 
@@ -87,7 +93,7 @@
             <h3>Crypto Calculator</h3>
             <div class="input-group">
                 <label>Side</label>
-                <select id="cry-side">
+                <select id="cry-side" onchange="calcCrypto(); updateColors();">
                     <option value="buy">Buy</option>
                     <option value="sell">Sell</option>
                 </select>
@@ -111,13 +117,12 @@
             <div class="input-group">
                 <label>Exit Order Type</label>
                 <select id="cry-exit-type" onchange="calcCrypto()">
-                    <option value="0.0044">Half Maker (0.0044%)</option>
-                    <option value="0.0088">Maker (0.0088%)</option>
-                    <option value="0.022">50/50 Split</option>
-                    <option value="0.0352">Taker (0.0352%)</option>
-                    <option value="0">Zero (0%)</option>
-                    <option value="0.0176">Half Taker (0.0176%)</option>
-                    
+                    <option value="0">Zero (full exit within scalper offer,0%)</option>
+                    <option value="0.0044">Half Maker (first half exit scalper offer, second half exit normal limit,0.0044%)</option>
+                    <option value="0.0176">Half Taker (first half exit scalper offer, second half exit normal market,0.0176%)</option>
+                    <option value="0.0352">Taker (normal market order exit,0.0352%)</option>
+                    <option value="0.0088">Maker (normal limit order exit,0.0088%)</option>
+                    <option value="0.022">50/50 Split (half exit limit,half exit market)</option>
                 </select>
             </div>
 
@@ -125,6 +130,14 @@
                 <div class="result-item">
                     <span>Total Charges:</span>
                     <span class="value" id="cry-res-charges">0.00</span>
+                </div>
+                <div class="result-item">
+                    <span>Breakeven points from TP:</span>
+                    <span class="value" id="cry-res-tp">0.00</span>
+                </div>
+                <div class="result-item">
+                    <span>Breakeven points from SL:</span>
+                    <span class="value" id="cry-res-sl">0.00</span>
                 </div>
                 <div class="result-item">
                     <span>Breakeven Price:</span>
@@ -137,7 +150,7 @@
             <h3>Nifty Options</h3>
             <div class="input-group">
                 <label>Side</label>
-                <select id="opt-side" onchange="calcOptions()">
+                <select id="opt-side" onchange="calcOptions(); updateColors();">
                     <option value="sell">Sell</option>
                     <option value="buy">Buy</option>
                 </select>
@@ -157,6 +170,14 @@
                     <span class="value" id="opt-res-charges">₹ 0.00</span>
                 </div>
                 <div class="result-item">
+                    <span>Breakeven points from TP:</span>
+                    <span class="value" id="opt-res-tp">0.00</span>
+                </div>
+                <div class="result-item">
+                    <span>Breakeven points from SL:</span>
+                    <span class="value" id="opt-res-sl">0.00</span>
+                </div>
+                <div class="result-item">
                     <span>Breakeven Price:</span>
                     <span class="value" id="opt-res-be">₹ 0.00</span>
                 </div>
@@ -165,6 +186,14 @@
     </div>
 
     <script>
+        function updateColors() {
+            const crySide = document.getElementById('cry-side');
+            const optSide = document.getElementById('opt-side');
+
+            crySide.className = crySide.value === 'buy' ? 'bg-buy' : 'bg-sell';
+            optSide.className = optSide.value === 'buy' ? 'bg-buy' : 'bg-sell';
+        }
+
         function calcCrypto() {
             const side = document.getElementById('cry-side').value;
             const price = parseFloat(document.getElementById('cry-price').value) || 0;
@@ -173,12 +202,17 @@
             const exitFeePercent = parseFloat(document.getElementById('cry-exit-type').value) / 100;
 
             const entryCharges = qty * price * entryFeePercent;
-            const exitCharges = qty * price * exitFeePercent; // Simplified as exit price is unknown, using entry for BE
+            const exitCharges = qty * price * exitFeePercent; 
             const totalCharges = entryCharges + exitCharges;
+
+            const tpPoints = totalCharges * 2;
+            const slPoints = qty !== 0 ? totalCharges / (qty / 2) : 0;
 
             let be = side === 'buy' ? price + (totalCharges / qty) : price - (totalCharges / qty);
 
             document.getElementById('cry-res-charges').innerText = totalCharges.toFixed(4);
+            document.getElementById('cry-res-tp').innerText = tpPoints.toFixed(4);
+            document.getElementById('cry-res-sl').innerText = slPoints.toFixed(4);
             document.getElementById('cry-res-be').innerText = be.toFixed(4);
         }
 
@@ -187,11 +221,17 @@
             const price = parseFloat(document.getElementById('opt-price').value) || 0;
             const qty = parseFloat(document.getElementById('opt-qty').value) || 0;
 
-            if (price === 0 || qty === 0) return;
+            if (price === 0 || qty === 0) {
+                document.getElementById('opt-res-charges').innerText = "₹ 0.00";
+                document.getElementById('opt-res-tp').innerText = "0.00";
+                document.getElementById('opt-res-sl').innerText = "0.00";
+                document.getElementById('opt-res-be').innerText = "₹ 0.00";
+                return;
+            }
 
             const turnover = price * qty;
             
-            const brokerage = 60; // Flat as per your request
+            const brokerage = 60; 
             const stt = 0.001 * turnover;
             const txnCharges = 0.0003503 * 2 * turnover;
             const sebi = 0.000001 * 2 * turnover;
@@ -202,9 +242,14 @@
             
             const totalCharges = brokerage + stt + txnCharges + sebi + gst + stamp + ipft;
             
+            const tpPoints = totalCharges * 2;
+            const slPoints = totalCharges / (qty / 2);
+
             let be = side === 'buy' ? price + (totalCharges / qty) : price - (totalCharges / qty);
 
             document.getElementById('opt-res-charges').innerText = "₹ " + totalCharges.toFixed(2);
+            document.getElementById('opt-res-tp').innerText = tpPoints.toFixed(2);
+            document.getElementById('opt-res-sl').innerText = slPoints.toFixed(2);
             document.getElementById('opt-res-be').innerText = "₹ " + be.toFixed(2);
         }
     </script>
