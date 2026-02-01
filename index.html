@@ -118,10 +118,10 @@
                 <label>Exit Order Type</label>
                 <select id="cry-exit-type" onchange="calcCrypto()">
                     <option value="0">Zero (full exit within scalper offer,0%)</option>
+                    <option value="0.0088">Maker (normal limit order exit,0.0088%)</option>
+                     <option value="0.0352">Taker (normal market order exit,0.0352%)</option>
                     <option value="0.0044">Half Maker (first half exit scalper offer, second half exit normal limit,0.0044%)</option>
                     <option value="0.0176">Half Taker (first half exit scalper offer, second half exit normal market,0.0176%)</option>
-                    <option value="0.0352">Taker (normal market order exit,0.0352%)</option>
-                    <option value="0.0088">Maker (normal limit order exit,0.0088%)</option>
                     <option value="0.022">50/50 Split (half exit limit,half exit market)</option>
                 </select>
             </div>
@@ -132,16 +132,16 @@
                     <span class="value" id="cry-res-charges">0.00</span>
                 </div>
                 <div class="result-item">
+                    <span>Breakeven Price:</span>
+                    <span class="value" id="cry-res-be">0.00</span>
+                </div>
+                <div class="result-item">
                     <span>Breakeven points from TP:</span>
                     <span class="value" id="cry-res-tp">0.00</span>
                 </div>
                 <div class="result-item">
                     <span>Breakeven points from SL:</span>
                     <span class="value" id="cry-res-sl">0.00</span>
-                </div>
-                <div class="result-item">
-                    <span>Breakeven Price:</span>
-                    <span class="value" id="cry-res-be">0.00</span>
                 </div>
             </div>
         </div>
@@ -170,16 +170,16 @@
                     <span class="value" id="opt-res-charges">₹ 0.00</span>
                 </div>
                 <div class="result-item">
+                    <span>Breakeven Price:</span>
+                    <span class="value" id="opt-res-be">₹ 0.00</span>
+                </div>
+                <div class="result-item">
                     <span>Breakeven points from TP:</span>
                     <span class="value" id="opt-res-tp">0.00</span>
                 </div>
                 <div class="result-item">
                     <span>Breakeven points from SL:</span>
                     <span class="value" id="opt-res-sl">0.00</span>
-                </div>
-                <div class="result-item">
-                    <span>Breakeven Price:</span>
-                    <span class="value" id="opt-res-be">₹ 0.00</span>
                 </div>
             </div>
         </div>
